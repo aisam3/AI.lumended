@@ -95,7 +95,8 @@ export default function IntakeForm() {
   const handleInputChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value, type } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
@@ -157,7 +158,7 @@ export default function IntakeForm() {
     }
   };
 
-  const removeFile = (type, index = null) => {
+  const removeFile = (type: 'logo' | 'template' | 'document', index: number | null = null) => {
     if (type === 'logo') {
       setFiles(prev => ({ ...prev, logo: null }));
       if (logoInputRef.current) logoInputRef.current.value = '';
@@ -172,14 +173,14 @@ export default function IntakeForm() {
     }
   };
 
-  const getFileIcon = (fileType) => {
+  const getFileIcon = (fileType: string) => {
     if (fileType.startsWith('image/')) return ImageIcon;
     if (fileType.includes('pdf')) return FileText;
     if (fileType.includes('json')) return FileJson;
     return File;
   };
 
-  const formatFileSize = (bytes) => {
+  const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
@@ -187,7 +188,7 @@ export default function IntakeForm() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (step < 4) {
       nextStep();
