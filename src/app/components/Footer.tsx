@@ -3,6 +3,7 @@
 import { Mail, MapPin, Phone, ArrowUpRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
+
 export default function Footer() {
   const currentYear = new Date().getFullYear();
   const [isVisible, setIsVisible] = useState(false);
@@ -39,7 +40,7 @@ export default function Footer() {
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Content */}
-        <div 
+        <div
           className={`py-4 sm:py-6 lg:py-8 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
         >
           <div className="max-w-6xl mx-auto">
@@ -54,7 +55,7 @@ export default function Footer() {
 
             {/* Contact Info - ALWAYS 3 COLUMNS - design never changes */}
             <div className="grid grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
-              
+
               {/* Column 1 - Phone */}
               <div className="flex flex-col items-center text-center">
                 <div className="flex items-center gap-1 sm:gap-1.5 lg:gap-2 mb-1">
@@ -65,7 +66,7 @@ export default function Footer() {
                     Call Us
                   </span>
                 </div>
-                <a 
+                <a
                   href={`tel:${contactInfo.phone.replace(/\D/g, '')}`}
                   className="text-[10px] sm:text-xs lg:text-sm font-medium text-[var(--warm-white)] hover:text-[var(--amber-gold)] transition-colors duration-300"
                 >
@@ -86,7 +87,7 @@ export default function Footer() {
                     Email Us
                   </span>
                 </div>
-                <a 
+                <a
                   href={`mailto:${contactInfo.email}`}
                   className="text-[9px] sm:text-xs lg:text-sm font-medium text-[var(--warm-white)] hover:text-[var(--amber-gold)] transition-colors duration-300 break-all"
                 >
@@ -122,17 +123,17 @@ export default function Footer() {
         <div className="border-t border-[var(--warm-gray)]/20 my-0 sm:my-2 lg:my-3" />
 
         {/* Bottom Bar - ALWAYS 3 COLUMNS - design never changes */}
-        <div 
+        <div
           className={`py-4 sm:py-5 lg:py-6 transition-all duration-700 delay-100 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
         >
           <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:gap-4 items-center">
-            
+
             {/* Column 1 - Logo & Copyright */}
             <div className="flex flex-col items-start">
               <div className="flex items-center gap-1 sm:gap-1.5 lg:gap-2 mb-0.5">
                 <div className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 rounded-md overflow-hidden">
-                  <img 
-                    src="/ai-for-homebuilders.jpg" 
+                  <img
+                    src="/ai-for-homebuilders.jpg"
                     alt="AI for Homebuilders Logo"
                     className="w-full h-full object-cover"
                   />
@@ -152,9 +153,8 @@ export default function Footer() {
                 <a
                   key={link.name}
                   href={link.href}
-                  className={`text-[10px] sm:text-[10px] lg:text-[11px] text-[var(--warm-gray)] hover:text-[var(--amber-gold)] transition-all duration-300 group whitespace-nowrap ${
-                    hoveredLink === link.name ? 'text-[var(--amber-gold)]' : ''
-                  }`}
+                  className={`text-[10px] sm:text-[10px] lg:text-[11px] text-[var(--warm-gray)] hover:text-[var(--amber-gold)] transition-all duration-300 group whitespace-nowrap ${hoveredLink === link.name ? 'text-[var(--amber-gold)]' : ''
+                    }`}
                   onMouseEnter={() => setHoveredLink(link.name)}
                   onMouseLeave={() => setHoveredLink(null)}
                 >

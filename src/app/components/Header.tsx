@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Menu, X, Download, CheckCircle, Mail } from "lucide-react";
 
+
 // Email Capture Modal (unchanged - keeping it exactly as you had)
 interface EmailCaptureModalProps {
   isOpen: boolean;
@@ -81,8 +82,8 @@ function EmailCaptureModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm animate-smooth-appear z-[60] flex items-center justify-center p-4">
-     
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm animate-smooth-appear z-[60] flex items-center justify-center p-4 mt-10">
+
       <div className="relative w-full max-w-md bg-gradient-to-br from-warm-white to-warm-white/95 rounded-2xl overflow-hidden shadow-2xl border border-amber-gold/20">
         <button
           onClick={handleClose}
@@ -337,6 +338,14 @@ export default function Header() {
                 >
                   Book Demo
                 </button>
+                <Link href="/onboarding">
+                  <button
+                    id="onboarding"
+                    className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition"
+                  >
+                    Payment
+                  </button>
+                </Link>
               </div>
             </div>
 
