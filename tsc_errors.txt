@@ -1,0 +1,6 @@
+src/app/onboarding/page.tsx(287,6): error TS17008: JSX element 'div' has no corresponding closing tag.
+src/app/onboarding/page.tsx(288,8): error TS17008: JSX element 'div' has no corresponding closing tag.
+src/app/onboarding/page.tsx(342,10): error TS17008: JSX element 'form' has no corresponding closing tag.
+src/app/onboarding/page.tsx(841,12): error TS17008: JSX element 'div' has no corresponding closing tag.
+src/app/onboarding/page.tsx(858,131): error TS1005: '</' expected.
+src/app/onboarding/page.tsx(858,131): error TS1005: '}' expected.

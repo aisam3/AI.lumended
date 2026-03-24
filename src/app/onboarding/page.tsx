@@ -1,12 +1,12 @@
 "use client";
 
 import { ChangeEvent, useState, useRef } from "react";
-import { 
-  Building2, 
-  User, 
-  Mail, 
-  Phone, 
-  Globe, 
+import {
+  Building2,
+  User,
+  Mail,
+  Phone,
+  Globe,
   Palette,
   Upload,
   ChevronRight,
@@ -26,8 +26,11 @@ import {
   Loader2
 } from "lucide-react";
 
+
 export default function IntakeForm() {
   const [step, setStep] = useState(1);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   const [files, setFiles] = useState<{
     logo: File | null;
     documents: File[];
@@ -109,7 +112,7 @@ export default function IntakeForm() {
     const selectedValues = Array.from(options)
       .filter(option => option.selected)
       .map(option => option.value);
-    
+
     setFormData(prev => ({
       ...prev,
       [name]: selectedValues
@@ -120,7 +123,7 @@ export default function IntakeForm() {
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      if (file.size > 10 * 1024 * 1024) {
         alert("File size must be less than 10MB");
         return;
       }
@@ -135,15 +138,15 @@ export default function IntakeForm() {
   const handleDocumentsUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFiles = Array.from(e.target.files || []);
     const validFiles = uploadedFiles.filter(file => {
-      if (file.size > 25 * 1024 * 1024) { // 25MB limit
+      if (file.size > 25 * 1024 * 1024) {
         alert(`${file.name} is too large. Max size is 25MB`);
         return false;
       }
       return true;
     });
-    
-    setFiles(prev => ({ 
-      ...prev, 
+
+    setFiles(prev => ({
+      ...prev,
       documents: [...prev.documents, ...validFiles]
     }));
   };
@@ -151,7 +154,7 @@ export default function IntakeForm() {
   const handleTemplateUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 25 * 1024 * 1024) { // 25MB limit
+      if (file.size > 25 * 1024 * 1024) {
         alert("File size must be less than 25MB");
         return;
       }
@@ -189,15 +192,92 @@ export default function IntakeForm() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
+  // Function to create a payment session and redirect to Stripe
+  const handleStripePayment = async () => {
+    setPaymentError(null);
+    setIsProcessing(true);
+
+    try {
+      // Create FormData to send to your backend
+      const formDataToSend = new FormData();
+
+      // Append form data
+      formDataToSend.append('companyName', formData.companyName);
+      formDataToSend.append('contactName', formData.contactName);
+      formDataToSend.append('email', formData.email);
+      formDataToSend.append('phone', formData.phone);
+      formDataToSend.append('website', formData.website);
+      formDataToSend.append('primaryColor', formData.primaryColor);
+      formDataToSend.append('secondaryColor', formData.secondaryColor);
+      formDataToSend.append('builderType', formData.builderType);
+      formDataToSend.append('tone', formData.tone);
+      formDataToSend.append('specialInstructions', formData.specialInstructions);
+      formDataToSend.append('coverageCategories', JSON.stringify(formData.coverageCategories));
+      formDataToSend.append('integration', formData.integration);
+      formDataToSend.append('apiKey', formData.apiKey);
+      formDataToSend.append('platforms', JSON.stringify(formData.platforms));
+      formDataToSend.append('propertyCount', formData.propertyCount);
+      formDataToSend.append('termsAccepted', formData.termsAccepted.toString());
+
+      // Append files if they exist
+      if (files.logo) {
+        formDataToSend.append('logo', files.logo);
+      }
+      if (files.template) {
+        formDataToSend.append('template', files.template);
+      }
+      files.documents.forEach((doc) => {
+        formDataToSend.append('documents', doc);
+      });
+
+      // Send to your backend API endpoint that creates a Stripe Checkout Session
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        body: formDataToSend,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.error || errorData.message || 'Failed to create checkout session');
+        } catch (e) {
+          throw new Error(`Server error: ${errorText.substring(0, 100)}`);
+        }
+      }
+
+      const data = await response.json();
+
+      // Modern Stripe v2+ approach: use the checkout URL returned by the backend
+      const checkoutUrl = data.url || data.checkoutUrl;
+
+      if (!checkoutUrl) {
+        throw new Error('No checkout URL returned from backend. Make sure your API returns session.url.');
+      }
+
+      // Redirect to Stripe Checkout
+      window.location.href = checkoutUrl;
+
+    } catch (error) {
+      console.error('Payment error:', error);
+      setPaymentError(error instanceof Error ? error.message : 'An error occurred while processing your payment. Please try again.');
+      setIsProcessing(false);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (step < 4) {
       nextStep();
     } else {
-      // Here you would typically submit the form data and files to your backend
-      console.log('Form Data:', formData);
-      console.log('Files:', files);
-      alert('Form submitted successfully! (Check console for data)');
+      // Validate terms acceptance
+      if (!formData.termsAccepted) {
+        setPaymentError('Please accept the terms and conditions to continue.');
+        return;
+      }
+
+      // Initiate Stripe payment
+      handleStripePayment();
     }
   };
 
@@ -220,20 +300,17 @@ export default function IntakeForm() {
               return (
                 <div key={s.number} className="flex-1 text-center">
                   <div className="relative">
-                    <div className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center transition-all duration-300 ${
-                      step >= s.number 
-                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' 
-                        : 'bg-gray-200 text-gray-400'
-                    }`}>
+                    <div className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center transition-all duration-300 ${step >= s.number
+                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
+                      : 'bg-gray-200 text-gray-400'
+                      }`}>
                       {step > s.number ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
                     </div>
-                    <div className={`absolute top-0 left-1/2 w-full h-0.5 -z-10 transition-all duration-300 ${
-                      step > s.number ? 'bg-blue-600' : 'bg-gray-200'
-                    }`} style={{ width: s.number === 4 ? '0' : '100%', transform: 'translateX(50%)' }} />
+                    <div className={`absolute top-0 left-1/2 w-full h-0.5 -z-10 transition-all duration-300 ${step > s.number ? 'bg-blue-600' : 'bg-gray-200'
+                      }`} style={{ width: s.number === 4 ? '0' : '100%', transform: 'translateX(50%)' }} />
                   </div>
-                  <p className={`mt-2 text-sm font-medium ${
-                    step >= s.number ? 'text-gray-900' : 'text-gray-400'
-                  }`}>
+                  <p className={`mt-2 text-sm font-medium ${step >= s.number ? 'text-gray-900' : 'text-gray-400'
+                    }`}>
                     {s.title}
                   </p>
                 </div>
@@ -258,6 +335,14 @@ export default function IntakeForm() {
 
         {/* Main Form Card */}
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-xl p-6 md:p-8 backdrop-blur-lg backdrop-filter">
+          {/* Payment Error Message */}
+          {paymentError && step === 4 && (
+            <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4 flex gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+              <p className="text-sm text-red-700">{paymentError}</p>
+            </div>
+          )}
+
           {/* STEP 1 - Business Details */}
           {step === 1 && (
             <div className="space-y-6 animate-fadeIn">
@@ -350,7 +435,7 @@ export default function IntakeForm() {
 
                 <div className="md:col-span-2 space-y-2">
                   <label className="text-sm font-medium text-gray-700">Company Logo</label>
-                  <div 
+                  <div
                     className="border-2 border-dashed border-gray-300 rounded-xl p-6 hover:border-blue-500 transition-colors cursor-pointer"
                     onClick={() => logoInputRef.current?.click()}
                   >
@@ -439,7 +524,7 @@ export default function IntakeForm() {
 
                 <div className="md:col-span-2 space-y-2">
                   <label className="text-sm font-medium text-gray-700">Builder Type *</label>
-                  <select 
+                  <select
                     name="builderType"
                     value={formData.builderType}
                     onChange={handleInputChange}
@@ -470,7 +555,7 @@ export default function IntakeForm() {
               <div className="space-y-5">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Upload Documents</label>
-                  <div 
+                  <div
                     className="border-2 border-dashed border-gray-300 rounded-xl p-6 hover:border-purple-500 transition-colors cursor-pointer"
                     onClick={() => documentsInputRef.current?.click()}
                   >
@@ -549,8 +634,8 @@ export default function IntakeForm() {
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Coverage Categories</label>
-                  <select 
-                    multiple 
+                  <select
+                    multiple
                     name="coverageCategories"
                     onChange={handleSelectChange}
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent h-40"
@@ -626,7 +711,7 @@ export default function IntakeForm() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-medium text-gray-700">Project Management Integration</label>
-                  <select 
+                  <select
                     name="integration"
                     value={formData.integration}
                     onChange={handleInputChange}
@@ -659,8 +744,8 @@ export default function IntakeForm() {
 
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-medium text-gray-700">Platform Integration</label>
-                  <select 
-                    multiple 
+                  <select
+                    multiple
                     name="platforms"
                     onChange={handleSelectChange}
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent h-40"
@@ -749,11 +834,12 @@ export default function IntakeForm() {
 
           {/* Navigation Buttons */}
           <div className="flex justify-between mt-8 pt-6 border-t border-gray-100">
-            {step > 1 && (
+            {step > 1 && !isProcessing && (
               <button
                 type="button"
                 onClick={prevStep}
                 className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all flex items-center gap-2 font-medium"
+                disabled={isProcessing}
               >
                 <ChevronLeft className="w-4 h-4" />
                 Back
@@ -762,51 +848,32 @@ export default function IntakeForm() {
 
             <button
               type="submit"
-              className={`ml-auto px-6 py-3 rounded-xl transition-all flex items-center gap-2 font-medium ${
-                step < 4 
-                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-lg hover:shadow-blue-200' 
-                  : 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg shadow-green-200 hover:shadow-xl'
-              }`}
+              disabled={isProcessing}
+              className={`ml-auto px-6 py-3 rounded-xl transition-all flex items-center gap-2 font-medium ${isProcessing
+                ? 'opacity-70 cursor-not-allowed bg-blue-600 text-white'
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
             >
-              {step < 4 ? (
+              {isProcessing ? (
                 <>
-                  Continue
-                  <ChevronRight className="w-4 h-4" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Processing...
+                </>
+              ) : step === 4 ? (
+                <>
+                  Complete & Pay
+                  <CreditCard className="w-4 h-4" />
                 </>
               ) : (
                 <>
-                  Complete Payment
-                  <CreditCard className="w-4 h-4" />
+                  Next Step
+                  <ChevronRight className="w-4 h-4" />
                 </>
               )}
             </button>
           </div>
         </form>
-
-        {/* Trust Badge */}
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-500">
-            🔒 Secure & encrypted • 30-day money-back guarantee
-          </p>
-        </div>
       </div>
-
-      <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        .animate-fadeIn {
-          animation: fadeIn 0.5s ease-out;
-        }
-      `}</style>
     </div>
   );
-}
+}     
